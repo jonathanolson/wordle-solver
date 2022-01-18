@@ -177,7 +177,7 @@
 
         // Yes, this is a blatant memory leak, set up disposal
         display.sizeProperty.link( size => {
-          this.maxWidth = size.width - 20;
+          this.maxWidth = Math.min( size.width - 20, 700 );
         } );
       }
     }
@@ -286,7 +286,7 @@
       }
     } );
 
-    const helpText = new scenery.RichText( 'Click one of the starting guesses, I\'ll give you the rest!<br><br>Select the colors of the result (or click the letters to cycle through gray/yellow/green), then you\'ll be given another guess.<br><br>Optimized to minimize the number of total guesses. Best is ~3.43 per win. <a href="{{about}}">Learn More</a>.', {
+    const helpText = new scenery.RichText( 'Click one of the starting guesses, I\'ll give you the rest!<br><br>Click the letters to change the color to match your result, then you\'ll be given another guess (or click a thumbnail option below).<br><br>Optimized to minimize the number of total guesses. Best is ~3.43 per win. <a href="{{about}}">Learn More</a>.', {
       lineWrap: 330,
       font: new scenery.Font( { size: 14, family: fontFamily } ),
       layoutOptions: { topMargin: 15 },
@@ -296,9 +296,10 @@
     const selectionHeaderFont = new scenery.Font( { size: 14, fontFamily: fontFamily } );
 
     const createTreeButton = tree => {
-      const label = new scenery.RichText( tree.guess.toUpperCase(), {
+      const label = new scenery.RichText( `<u>${tree.guess.toUpperCase()}</u>`, {
         font: new scenery.Font( { size: 14, fontFamily: fontFamily, weight: '700' } ),
-        cursor: 'pointer'
+        cursor: 'pointer',
+        fill: '#0645AD'
       } );
 
       label.addInputListener( new scenery.FireListener( {
