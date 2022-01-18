@@ -227,7 +227,7 @@
         this.addChild( letterBox );
 
         if ( !isLeaf ) {
-          this.addChild( new scenery.Text( `${computeAverageGuesses( tree ).toFixed( 2 )} avg. guesses, ${words.length} words, ${Object.values( tree.map ).length} colorings`, { fontSize: 14, fontFamily: fontFamily, fill: gray } ) );
+          this.addChild( new scenery.Text( `${computeAverageGuesses( tree ).toFixed( 2 )} ${depth === 1 ? 'total avg. guesses' : 'avg. guesses left'}, ${words.length} words, ${Object.values( tree.map ).length} colorings`, { fontSize: 14, fontFamily: fontFamily, fill: gray } ) );
         }
         else {
           this.addChild( new scenery.Text( `solved`, { fontSize: 14, fontFamily: fontFamily, fill: gray, layoutOptions: { topMargin: 5 } } ) );
@@ -261,6 +261,7 @@
     }
 
     const treeProperty = new axon.Property( null );
+    window.treeProperty = treeProperty;
 
     const scene = new scenery.Node();
     const display = new scenery.Display( scene, {
@@ -286,7 +287,7 @@
       }
     } );
 
-    const helpText = new scenery.RichText( 'Click one of the starting guesses, I\'ll give you the rest!<br><br>Click the letters to change the color to match your result, then you\'ll be given another guess (or click a thumbnail option below).<br><br>Optimized to minimize the number of total guesses. Best is ~3.43 per win. <a href="{{about}}">Learn More</a>.', {
+    const helpText = new scenery.RichText( 'Click one of the starting guesses, I\'ll give you the rest!<br><br>Click the letters to change the color to match your result, then you\'ll be given another guess (or click a thumbnail option below).<br><br>Optimized to minimize the number of total guesses. Best is ~3.42 per win. <a href="{{about}}">Learn More</a>.', {
       lineWrap: 330,
       font: new scenery.Font( { size: 14, family: fontFamily } ),
       layoutOptions: { topMargin: 15 },
@@ -299,7 +300,7 @@
       const label = new scenery.RichText( `<u>${tree.guess.toUpperCase()}</u>`, {
         font: new scenery.Font( { size: 14, fontFamily: fontFamily, weight: '700' } ),
         cursor: 'pointer',
-        fill: '#0645AD'
+        fill: 'rgb(27,0,241)'
       } );
 
       label.addInputListener( new scenery.FireListener( {

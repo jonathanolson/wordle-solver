@@ -81,12 +81,33 @@ class ComputationNode {
 
   // @public
   depthOpen( averageWeight = 2, bestWeight = 1 ) {
-    if ( this.depth > 2 ) {
+    if ( this.depth >= 1 ) {
       this.openNext( averageWeight, bestWeight );
     }
     for ( let i = 0; i < this.guessNodes.length; i++ ) {
       const guessNode = this.guessNodes[ i ];
       guessNode.depthOpen();
+      this.depth = Math.min( this.depth, guessNode.depth );
+    }
+  }
+
+  // @public
+  depthFix( averageWeight = 2, bestWeight = 1 ) {
+    if ( this.depth === 1 ) {
+      let hasGoodGuess = false;
+      for ( let i = 0; i < this.guessNodes.length; i++ ) {
+        if ( this.words.includes( this.guessNodes[ i ].guess ) ) {
+          hasGoodGuess = true;
+          break;
+        }
+      }
+      if ( !hasGoodGuess ) {
+        this.openNext( averageWeight, bestWeight );
+      }
+    }
+    for ( let i = 0; i < this.guessNodes.length; i++ ) {
+      const guessNode = this.guessNodes[ i ];
+      guessNode.depthFix();
       this.depth = Math.min( this.depth, guessNode.depth );
     }
   }
@@ -206,7 +227,7 @@ class ComputationNode {
 
   // @private
   openNext( averageWeight = 2, bestWeight = 1 ) {
-    if ( this.depth !== 1 ) {
+    // if ( this.depth !== 1 ) {
       const option = this.getNextOption( averageWeight, bestWeight );
       if ( option ) {
         const guesses = [ ...this.guesses, option.guess ];
@@ -217,7 +238,7 @@ class ComputationNode {
 
         this.depth = Math.min( this.depth, guessNode.depth );
       }
-    }
+    // }
   }
 }
 class GuessOption {
@@ -284,6 +305,17 @@ class GuessNode {
       const item = this.map[ score ];
       if ( typeof item !== 'string' ) {
         item.depthOpen( averageWeight, bestWeight );
+      }
+    }
+    this.recomputeDepth();
+  }
+
+  // @public
+  depthFix( averageWeight = 2, bestWeight = 1 ) {
+    for ( const score in this.map ) {
+      const item = this.map[ score ];
+      if ( typeof item !== 'string' ) {
+        item.depthFix( averageWeight, bestWeight );
       }
     }
     this.recomputeDepth();
