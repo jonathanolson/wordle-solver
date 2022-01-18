@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Wordled: ALTER</title>
+
+  <script src="lib/jquery-2.1.0.min.js"></script>
+  <script src="lib/lodash-4.17.4.min.js"></script>
+  <script src="lib/scenery.min.js"></script>
+  <script src="lib/he-1.1.1.js"></script>
+  <script src="lib/himalaya-1.1.0.js"></script>
+  <script src="lib/flatqueue-1.2.1.js"></script>
+
+<!--  <script src="../assert/js/assert.js"></script>-->
+<!--  <script src="../tandem/js/PhetioIDUtils.js"></script>-->
+
+  <style>
+    html, body {
+      background-color: #fff;
+      border: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="main" style="position: absolute; left: 0; top: 0;">
+  </div>
+
+  <script type="module">
+    // import scenery from '../chipper/dist/js/scenery/js/main.js';
+    // import dot from '../chipper/dist/js/dot/js/main.js';
+    // import axon from '../chipper/dist/js/axon/js/main.js';
+    // import phetCore from '../chipper/dist/js/phet-core/js/main.js';
+
+    import crateTreeTotal from './data/crate.tree.total.js';
+    import traceTreeTotal from './data/trace.tree.total.js';
+    // import tree from './data/alter.tree.js';
+    import totalTraceTree from './data/trace.tree.total.js';
+    import totalSlateTree from './data/slate.tree.total.js';
+    import totalCrateTree from './data/crate.tree.total.js';
+    import minRanceTree from './data/rance.tree.js';
+    import minAlterTree from './data/alter.tree.js';
+    import minRatedTree from './data/rated.tree.js';
+    import targetWords from './data/targetWords.js';
+
+    const fontFamily = "'Clear Sans', 'Helvetica Neue', Arial, sans-serif";
+    const black = new scenery.Color( '#1A1A1B' );
+    const gray = new scenery.Color( '#787C7E' );
+    const yellow = new scenery.Color( '#C9B458' );
+    const green = new scenery.Color( '#6AAA64' );
+
+    const LENGTH = 5;
+    const ABSENT = 0;
+    const PRESENT = 1;
+    const CORRECT = 2;
+    const scratchResult = [ ABSENT, ABSENT, ABSENT, ABSENT, ABSENT ];
+    const scratchIncorrect = [ true, true, true, true, true ];
+    const scratchUnused = [ true, true, true, true, true ];
+    const computeScore = ( correctSolution, attempt ) => {
+      const result = scratchResult.fill( ABSENT ); // indexed by attempt
+      const incorrect = scratchIncorrect.fill( true ); // indexed by correctSolution
+      const unused = scratchUnused.fill( true ); // indexed by attempt
+
+      for ( let i = 0; i < LENGTH; i++ ) {
+        if ( correctSolution[ i ] === attempt[ i ] ) {
+          result[ i ] = CORRECT;
+          incorrect[ i ] = false;
+          unused[ i ] = false;
+        }
+      }
+
+      for ( let i = 0; i < LENGTH; i++ ) {
+        if ( incorrect[ i ] ) {
+          const correctLetter = correctSolution[ i ];
+          for ( let k = 0; k < LENGTH; k++ ) {
+            if ( unused[ k ] && correctLetter === attempt[ k ] ) {
+              result[ k ] = PRESENT;
+              unused[ k ] = false;
+              break;
+            }
+          }
+        }
+      }
+
+      return result.join( '' );
+    };
+
+    const computePartition = ( words, guess ) => {
+      const map = {};
+      for ( let i = 0; i < words.length; i++ ) {
+        const word = words[ i ];
+        const match = score( word, guess );
+        let list = map[ match ];
+        if ( !list ) {
+          list = map[ match ] = [];
+        }
+        list.push( word );
+      }
+      return map;
+    };
+
+    const computeAverageGuesses = tree => {
+      let averageGuesses = 0;
+      let total = 0;
+      for ( let i = 0; i < tree.ranking.counts.length; i++ ) {
+        total += tree.ranking.counts[ i ];
+        averageGuesses += ( i + 1 ) * tree.ranking.counts[ i ];
+      }
+      averageGuesses /= total;
+      return averageGuesses;
+    }
+
+    class StaticWordNode extends scenery.FlowBox {
+      constructor( word, score, options ) {
+        super( phetCore.merge( {
+          spacing: 5,
+          mouseArea: new dot.Bounds2( 0, 0, 330, 62 ),
+          touchArea: new dot.Bounds2( 0, 0, 330, 62 ),
+          children: word.split( '' ).map( ( letter, index ) => {
+            // TODO: factor out below?
+            return new scenery.Rectangle( 0, 0, 62, 62, {
+              fill: { 0: gray, 1: yellow, 2: green }[ score[ index ] ],
+              children: [
+                new scenery.Text( letter.toUpperCase(), { fontSize: 32, fontFamily: fontFamily, fontWeight: '700', fill: 'white', centerX: 32, centerY: 32 } )
+              ]
+            } )
+          } )
+        }, options ) );
+      }
+    }
+
+    class WordOptionsNode extends scenery.Node {
+      constructor( tree, words, depth, scoreProperty ) {
+        const scores = Object.keys( tree.map ).sort();
+        const rows = Math.max( 1, Math.floor( Math.sqrt( scores.length ) - 0.5 ) );
+        const xSpacing = 20;
+        const ySpacing = 5;
+
+        super();
+
+        const childNode = new scenery.Node( { scale: 0.5 } );
+        this.addChild( childNode );
+
+        const highlightAmount = 5;
+        const highlightRectangle = new scenery.Rectangle( { stroke: black, lineWidth: highlightAmount / 2 } );
+
+        scores.forEach( ( score, index ) => {
+          const row = index % rows;
+          const col = Math.floor( index / rows );
+
+          const wordNode = new StaticWordNode( tree.guess, score, { cursor: 'pointer' } );
+          wordNode.addInputListener( new scenery.FireListener( {
+            fire: () => {
+              scoreProperty.value = score;
+            }
+          } ) );
+
+          wordNode.x = col * ( wordNode.width + xSpacing );
+          wordNode.y = row * ( wordNode.height + ySpacing );
+          childNode.addChild( wordNode );
+
+          scoreProperty.link( otherScore => {
+            wordNode.opacity = otherScore === score ? 1 : 0.6;
+            if ( otherScore === score ) {
+              highlightRectangle.rectBounds = wordNode.bounds.dilated( highlightAmount );
+            }
+          } );
+        } );
+
+        childNode.localBounds = childNode.localBounds.dilated( 10 );
+
+        childNode.addChild( highlightRectangle );
+
+        // Yes, this is a blatant memory leak, set up disposal
+        display.sizeProperty.link( size => {
+          this.maxWidth = size.width - 20;
+        } );
+      }
+    }
+
+    class WordNode extends scenery.FlowBox {
+      constructor( tree, words, depth, options ) {
+        options = phetCore.merge( {
+          orientation: 'vertical',
+          spacing: 2
+        }, options );
+        super( options );
+
+        const isLeaf = typeof tree === 'string';
+
+        const guess = isLeaf ? tree : tree.guess;
+
+        const scoreProperty = new axon.Property( isLeaf ? '22222' : '00000' );
+        // const scoreProperty = new axon.Property( isLeaf ? '22222' : ( tree.map[ '00000' ] ? '00000' : Object.keys( tree.map )[ 0 ] ) );
+
+        const letterNodes = guess.split( '' ).map( ( letter, index ) => {
+          let value = 0;
+
+          const letterNode = new scenery.Rectangle( 0, 0, 62, 62, {
+            fill: isLeaf ? green : gray,
+            children: [
+              new scenery.Text( letter.toUpperCase(), { fontSize: 32, fontFamily: fontFamily, fontWeight: '700', fill: 'white', centerX: 32, centerY: 32 } )
+            ],
+            cursor: 'pointer'
+          } );
+          scoreProperty.link( score => {
+            letterNode.fill = { 0: gray, 1: yellow, 2: green }[ score[ index ] ]
+          } );
+          !isLeaf && letterNode.addInputListener( new scenery.FireListener( {
+            fire: () => {
+              value = ( value + 1 ) % 3;
+              scoreProperty.value = scoreProperty.value.slice( 0, index ) + value + scoreProperty.value.slice( index + 1 );
+            }
+          } ) );
+          return letterNode;
+        } );
+
+        const letterBox = new scenery.FlowBox( {
+          spacing: 5,
+          children: letterNodes
+        } );
+
+        this.addChild( letterBox );
+
+        if ( !isLeaf ) {
+          this.addChild( new scenery.Text( `${computeAverageGuesses( tree ).toFixed( 2 )} avg. guesses, ${words.length} words, ${Object.values( tree.map ).length} colorings`, { fontSize: 14, fontFamily: fontFamily, fill: gray } ) );
+        }
+        else {
+          this.addChild( new scenery.Text( `solved`, { fontSize: 14, fontFamily: fontFamily, fill: gray, layoutOptions: { topMargin: 5 } } ) );
+        }
+
+        if ( !isLeaf ) {
+          this.addChild( new WordOptionsNode( tree, words, depth, scoreProperty ) );
+        }
+
+        if ( !isLeaf ) {
+          const childNode = new scenery.Node( {
+            layoutOptions: {
+              topMargin: 15
+            }
+          } );
+          this.addChild( childNode );
+
+          scoreProperty.lazyLink( score => {
+            if ( !tree.map[ score ] ) {
+              childNode.children = [ new scenery.Text( 'no match found', { fontSize: 14, fontFamily: fontFamily, fill: gray } ) ];
+            }
+            else if ( score !== '22222' ) {
+              childNode.children = [ new WordNode( tree.map[ score ], words.filter( word => computeScore( word, guess ) === score ), depth + 1 ) ];
+            }
+            else {
+              childNode.children = [];
+            }
+          } );
+        }
+      }
+    }
+
+    const treeProperty = new axon.Property( null );
+
+    const scene = new scenery.Node();
+    const display = new scenery.Display( scene, {
+      container: document.getElementById( 'main' ),
+      rootRenderer: 'svg',
+      // allowSceneOverflow: false,
+      // assumeFullWindow: true
+      allowCSSHacks: false,
+      passiveEvents: true
+    } );
+    display.domElement.style.position = 'absolute';
+    window.display = display;
+
+    const wordNodeContainer = new scenery.Node( {
+      layoutOptions: { topMargin: 15 }
+    } );
+    treeProperty.link( tree => {
+      if ( tree === null ) {
+        wordNodeContainer.removeAllChildren();
+      }
+      else {
+        wordNodeContainer.children = [ new WordNode( tree, targetWords, 1 ) ];
+      }
+    } );
+
+    const helpText = new scenery.RichText( 'Click one of the starting guesses, I\'ll give you the rest!<br><br>Select the colors of the result (or click the letters to cycle through gray/yellow/green), then you\'ll be given another guess.<br><br>Optimized to minimize the number of total guesses. Best is ~3.43 per win. <a href="{{about}}">Learn More</a>.', {
+      lineWrap: 330,
+      font: new scenery.Font( { size: 14, family: fontFamily } ),
+      layoutOptions: { topMargin: 15 },
+      links: { about: 'https://jonathanolson.net/' }
+    } );
+
+    const selectionHeaderFont = new scenery.Font( { size: 14, fontFamily: fontFamily } );
+
+    const createTreeButton = tree => {
+      const label = new scenery.RichText( tree.guess.toUpperCase(), {
+        font: new scenery.Font( { size: 14, fontFamily: fontFamily, weight: '700' } ),
+        cursor: 'pointer'
+      } );
+
+      label.addInputListener( new scenery.FireListener( {
+        fire: () => {
+          treeProperty.value = tree;
+          // helpText.visible = false;
+        }
+      } ) );
+
+      return label;
+    };
+
+    const mainBox = new scenery.FlowBox( {
+      orientation: 'vertical',
+      children: [
+        new scenery.RichText( 'WORDLE<span style="color: #6AAA64;">Solver</span>', { font: new scenery.Font( { size: 36, family: fontFamily, weight: '700' } ), fill: black } ),
+        helpText,
+        new scenery.HBox( {
+          layoutOptions: { topMargin: 10 },
+          spacing: 10,
+          children: [
+            new scenery.FlowBox( {
+              orientation: 'vertical',
+              children: [
+                new scenery.Text( 'Fastest Average', { font: selectionHeaderFont, fill: gray, layoutOptions: { bottomMargin: 5 } } ),
+                createTreeButton( totalTraceTree ),
+                createTreeButton( totalSlateTree ),
+                createTreeButton( totalCrateTree )
+              ]
+            } ),
+            new scenery.FlowBox( {
+              orientation: 'vertical',
+              children: [
+                new scenery.Text( 'Fewest 5+', { font: selectionHeaderFont, fill: gray, layoutOptions: { bottomMargin: 5 } } ),
+                createTreeButton( minRanceTree ),
+                createTreeButton( minAlterTree ),
+                createTreeButton( minRatedTree )
+              ]
+            } )
+          ]
+        } ),
+        wordNodeContainer
+      ]
+    } );
+    scene.addChild( mainBox );
+    mainBox.localBoundsProperty.link( localBounds => {
+      mainBox.centerX = window.innerWidth / 2;
+    } );
+
+    display.initializeEvents();
+
+    let resizeDirty = true;
+    const resizer = () => {
+      resizeDirty = true;
+    };
+    window.addEventListener( 'resize', resizer );
+    scene.boundsProperty.link( resizer );
+
+    display.updateOnRequestAnimationFrame( dt => {
+      if ( resizeDirty && scene.bounds.isFinite() ) {
+        resizeDirty = false;
+
+        display.setWidthHeight( window.innerWidth, Math.ceil( mainBox.bounds.height + 10 ) );
+      }
+    } );
+
+  </script>
+</body>
+</html>
