@@ -36,15 +36,14 @@
     // import axon from '../chipper/dist/js/axon/js/main.js';
     // import phetCore from '../chipper/dist/js/phet-core/js/main.js';
 
-    import crateTreeTotal from './data/crate.tree.total.js';
-    import traceTreeTotal from './data/trace.tree.total.js';
-    // import tree from './data/alter.tree.js';
     import totalTraceTree from './data/trace.tree.total.js';
     import totalSlateTree from './data/slate.tree.total.js';
     import totalCrateTree from './data/crate.tree.total.js';
+    import totalCraneTree from './data/crane.tree.total.js';
     import minRanceTree from './data/rance.tree.js';
     import minAlterTree from './data/alter.tree.js';
     import minRatedTree from './data/rated.tree.js';
+    import minLanceTree from './data/lance.tree.js';
     import targetWords from './data/targetWords.js';
 
     const fontFamily = "'Clear Sans', 'Helvetica Neue', Arial, sans-serif";
@@ -326,9 +325,10 @@
               orientation: 'vertical',
               children: [
                 new scenery.Text( 'Fastest Average', { font: selectionHeaderFont, fill: gray, layoutOptions: { bottomMargin: 5 } } ),
+                createTreeButton( totalCrateTree ),
                 createTreeButton( totalTraceTree ),
                 createTreeButton( totalSlateTree ),
-                createTreeButton( totalCrateTree )
+                createTreeButton( totalCraneTree )
               ]
             } ),
             new scenery.FlowBox( {
@@ -336,8 +336,9 @@
               children: [
                 new scenery.Text( 'Fewest 5+', { font: selectionHeaderFont, fill: gray, layoutOptions: { bottomMargin: 5 } } ),
                 createTreeButton( minRanceTree ),
-                createTreeButton( minAlterTree ),
-                createTreeButton( minRatedTree )
+                createTreeButton( minRatedTree ),
+                createTreeButton( minLanceTree ),
+                createTreeButton( minAlterTree )
               ]
             } )
           ]
