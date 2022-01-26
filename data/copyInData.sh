@@ -35,3 +35,8 @@ cat ../../miscworks/computed/wordle/rants.tree.json >> rants.tree.js
 echo -n "export default " > ronte.tree.js
 cat ../../miscworks/computed/wordle/ronte.tree.json >> ronte.tree.js
 
+echo -n "export default " > salet.tree.hard.js
+cat ../../miscworks/computed/wordle-hard/salet.tree.hard.json >> salet.tree.hard.js
+
+echo -n "export default " > cramp.tree.hard.js
+cat ../../miscworks/computed/wordle-hard/cramp.tree.hard.json >> cramp.tree.hard.js

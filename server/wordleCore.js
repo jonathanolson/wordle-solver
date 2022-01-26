@@ -1,3 +1,4 @@
+const IS_HARD_MODE = true;
 const LENGTH = 5;
 const ABSENT = 0;
 const PRESENT = 1;
@@ -44,6 +45,37 @@ const decode = string => {
     scratchResult[ i ] = char === '0' ? ABSENT : ( char === '1' ? PRESENT : CORRECT );
   }
   return scratchResult;
+};
+const isHardModeValid = ( nextGuess, previousGuess, previousScore ) => {
+  for ( let i = 0; i < LENGTH; i++ ) {
+    if ( previousScore[ i ] === '2' && nextGuess[ i ] !== previousGuess[ i ] ) {
+      return false;
+    }
+  }
+  // Avoid object allocation?
+  for ( let i = 0; i < LENGTH; i++ ) {
+    if ( previousScore[ i ] === '0' ) {
+      continue;
+    }
+
+    const letter = previousGuess[ i ];
+
+    // Count in both words
+    let previousCount = 0;
+    let nextCount = 0;
+    for ( let j = 0; j < LENGTH; j++ ) {
+      if ( previousGuess[ j ] === letter && previousScore[ j ] !== '0' ) {
+        previousCount++;
+      }
+      if ( nextGuess[ j ] === letter ) {
+        nextCount++;
+      }
+    }
+    if ( nextCount < previousCount ) {
+      return false;
+    }
+  }
+  return true;
 };
 
 const fastScore = ( correctSolution, attempt ) => {
@@ -114,4 +146,4 @@ const fastDecode = n => {
   return a + b + c + d + e;
 };
 
-export { score, perfectScore, encode, decode, LENGTH, ABSENT, PRESENT, CORRECT, fastScore, fastDoesFullyPartition, fastPartition, fastDecode };
+export { score, perfectScore, encode, decode, IS_HARD_MODE, LENGTH, ABSENT, PRESENT, CORRECT, fastScore, fastDoesFullyPartition, fastPartition, fastDecode, isHardModeValid };

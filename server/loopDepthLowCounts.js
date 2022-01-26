@@ -1,7 +1,7 @@
 
 import { loadGuess, getGuesses, isLocked, createLock, deleteLock, saveGuess, loadGuessTotalTree } from './files.js';
 import _ from 'lodash';
-import { Ranking } from './wordleCompute.js';
+import { Heuristic, Ranking } from './wordleCompute.js';
 
 // node --max-old-space-size=8192 server/loopDepthLowCounts.js
 
@@ -19,7 +19,7 @@ while ( true ) {
 
       const guessNode = loadGuess( guess );
       console.log( guess );
-      guessNode.depthOpen( 100, 1 );
+      guessNode.depthOpen( new Heuristic() );
       saveGuess( guessNode );
 
       deleteLock( guess );

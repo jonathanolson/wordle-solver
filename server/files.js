@@ -1,7 +1,9 @@
 
 import fs from 'fs';
+import guessWords from './guessWords.js';
 import targetWords from './targetWords.js';
 import { ComputationNode, GuessNode, Ranking } from './wordleCompute.js';
+import { IS_HARD_MODE } from './wordleCore.js';
 
 // let files; import( './server/files.js' ).then( f => { files = f } );
 // let core; import( './server/wordleCore.js' ).then( f => { core = f } );
@@ -27,7 +29,7 @@ import { ComputationNode, GuessNode, Ranking } from './wordleCompute.js';
 //   }
 // });
 
-const saveDirectory = './computed/';
+const saveDirectory = `./computed/${IS_HARD_MODE ? 'wordle-hard' : 'wordle'}/`;
 
 const getGuessFile = ( guess, directory = saveDirectory ) => {
   return `${directory}${guess}.json`;
@@ -38,12 +40,15 @@ const getGuessTreeFile = ( guess, directory = saveDirectory ) => {
 const getGuessTotalTreeFile = ( guess, directory = saveDirectory ) => {
   return `${directory}${guess}.tree.total.json`;
 };
+const getGuessHardTreeFile = ( guess, directory = saveDirectory ) => {
+  return `${directory}${guess}.tree.hard.json`;
+};
 
 const save = root => {
   saveRoot( root );
 };
 const load = ( loadGuesses = true ) => {
-  const root = new ComputationNode( targetWords, [], true );
+  const root = new ComputationNode( targetWords, [], guessWords, true );
 
   if ( loadGuesses ) {
     getGuesses().forEach( guess => {
@@ -64,8 +69,13 @@ const saveRoot = root => {
 const saveGuess = ( guessNode, directory = saveDirectory ) => {
   console.log( `saving ${guessNode.guess}` );
   fs.writeFileSync( getGuessFile( guessNode.guess, directory ), JSON.stringify( guessNode.serialize() ) );
-  fs.writeFileSync( getGuessTreeFile( guessNode.guess, directory ), JSON.stringify( guessNode.createTree( Ranking.minimizeLongestMetric ) ) );
-  fs.writeFileSync( getGuessTotalTreeFile( guessNode.guess, directory ), JSON.stringify( guessNode.createTree( Ranking.totalGuessesMetric ) ) );
+  if ( IS_HARD_MODE ) {
+    fs.writeFileSync( getGuessHardTreeFile( guessNode.guess, directory ), JSON.stringify( guessNode.createLimitedTree() ) );
+  }
+  else {
+    fs.writeFileSync( getGuessTreeFile( guessNode.guess, directory ), JSON.stringify( guessNode.createTree( Ranking.minimizeLongestMetric ) ) );
+    fs.writeFileSync( getGuessTotalTreeFile( guessNode.guess, directory ), JSON.stringify( guessNode.createTree( Ranking.totalGuessesMetric ) ) );
+  }
 };
 const loadGuess = ( guess, directory = saveDirectory ) => {
   console.log( `loading ${guess}` );
@@ -76,6 +86,9 @@ const loadGuessTree = ( guess, directory = saveDirectory ) => {
 };
 const loadGuessTotalTree = ( guess, directory = saveDirectory ) => {
   return JSON.parse( fs.readFileSync( getGuessTotalTreeFile( guess, directory ), 'utf-8' ) );
+};
+const loadGuessHardTree = ( guess, directory = saveDirectory ) => {
+  return JSON.parse( fs.readFileSync( getGuessHardTreeFile( guess, directory ), 'utf-8' ) );
 };
 const getGuesses = ( directory = saveDirectory ) => {
   return fs.readdirSync( directory ).filter( file => {
@@ -96,7 +109,12 @@ const loadTree = ( metric = Ranking.minimizeLongestMetric ) => {
 };
 const loadSortedTrees = ( metric = Ranking.minimizeLongestMetric ) => {
   const guesses = getGuesses();
-  const trees = guesses.map( guess => metric === Ranking.minimizeLongestMetric ? loadGuessTree( guess ) : loadGuessTotalTree( guess ) );
+  const trees = guesses.map( guess => {
+    if ( IS_HARD_MODE ) {
+      return loadGuessHardTree( guess );
+    }
+    return metric === Ranking.minimizeLongestMetric ? loadGuessTree( guess ) : loadGuessTotalTree( guess );
+  } ).filter( tree => tree !== null );
   trees.sort( ( a, b ) => {
     return metric( new Ranking( a.ranking.counts ), new Ranking( b.ranking.counts ) );
   } );
@@ -112,7 +130,7 @@ const deleteLock = guess => {
   fs.unlinkSync( `${saveDirectory}${guess}.lock` );
 };
 
-export { save, load, saveGuess, loadGuess, getGuesses, saveRoot, loadGuessTree, loadGuessTotalTree, loadTree, loadSortedTrees, createLock, isLocked, deleteLock };
+export { save, load, saveGuess, loadGuess, getGuesses, saveRoot, loadGuessTree, loadGuessTotalTree, loadGuessHardTree, loadTree, loadSortedTrees, createLock, isLocked, deleteLock };
 
 // getGuesses().forEach( guess => {
 //   saveGuess( loadGuess( guess ) );

@@ -3,6 +3,8 @@ import print from './print.js';
 import targetWords from './targetWords.js';
 import { Ranking } from './wordleCompute.js';
 
+// node --max-old-space-size=8192 server/status.js total | head -n 50
+
 const metric = process.argv[ 2 ] === 'total' ? Ranking.totalGuessesMetric : Ranking.minimizeLongestMetric;
 
 const trees = loadSortedTrees( metric );

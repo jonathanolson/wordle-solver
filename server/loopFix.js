@@ -1,6 +1,7 @@
 
 import { loadGuess, getGuesses, isLocked, createLock, deleteLock, saveGuess } from './files.js';
 import _ from 'lodash';
+import { Heuristic } from './wordleCompute.js';
 
 // node --max-old-space-size=8192 server/loopFix.js
 
@@ -17,7 +18,7 @@ while ( true ) {
     const guessNode = loadGuess( guess );
     console.log( guess );
     // Do this for now?
-    guessNode.depthFix( 100, 1 );
+    guessNode.depthFix( new Heuristic() );
     saveGuess( guessNode );
 
     deleteLock( guess );

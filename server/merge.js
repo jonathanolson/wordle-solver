@@ -4,8 +4,8 @@ import _ from 'lodash';
 
 // node --max-old-space-size=8192 server/merge.js
 
-const aDir = './computed/';
-const bDir = './computed1/';
+const aDir = './computed/wordle/';
+const bDir = './computed/wordle5/';
 
 const aGuesses = getGuesses( aDir );
 const bGuesses = getGuesses( bDir );

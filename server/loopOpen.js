@@ -1,11 +1,12 @@
 
 import { load, getGuesses, isLocked, createLock, deleteLock, saveGuess } from './files.js';
-import { GuessNode } from './wordleCompute.js';
+import guessWords from './guessWords.js';
+import { GuessNode, Heuristic } from './wordleCompute.js';
 
 // node --max-old-space-size=8192 server/loopOpen.js
 
 const fakeRoot = load( false );
-const options = fakeRoot.getOptions();
+const options = fakeRoot.getOptions( new Heuristic() );
 
 
 for ( let i = 0; i < options.length; i++ ) {
@@ -22,7 +23,7 @@ for ( let i = 0; i < options.length; i++ ) {
 
   createLock( guess );
 
-  const guessNode = new GuessNode( options[ i ], [ guess ], false, 100, 1 );
+  const guessNode = new GuessNode( options[ i ], [ guess ], guessWords, false, new Heuristic() );
   saveGuess( guessNode );
 
   deleteLock( guess );

@@ -1,5 +1,6 @@
 
 import { loadGuess, getGuesses, isLocked, createLock, deleteLock, saveGuess } from './files.js';
+import { Heuristic } from './wordleCompute.js';
 
 // node --max-old-space-size=8192 server/loopMediumFine.js
 
@@ -16,7 +17,7 @@ while ( true ) {
     const guessNode = loadGuess( guess );
     if ( guessNode.computationNodeCount( 3 ) <= 7 ) {
       console.log( guess );
-      guessNode.targetedOpenTo( 4, { 3: 40, 2: 0 }, 100, 100, 1 );
+      guessNode.targetedOpenTo( 4, { 3: 40, 2: 0 }, 100, new Heuristic() );
       saveGuess( guessNode );
     }
 
