@@ -201,7 +201,7 @@
         const guess = isLeaf ? tree : tree.guess;
 
         const scoreProperty = new axon.Property( isLeaf ? '22222' : '00000' );
-        // const scoreProperty = new axon.Property( isLeaf ? '22222' : ( tree.map[ '00000' ] ? '00000' : Object.keys( tree.map )[ 0 ] ) );
+        // const scoreProperty = new phet.axon.Property( isLeaf ? '22222' : ( tree.map[ '00000' ] ? '00000' : Object.keys( tree.map )[ 0 ] ) );
 
         const letterNodes = guess.split( '' ).map( ( letter, index ) => {
           let value = 0;
